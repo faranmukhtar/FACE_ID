@@ -23,41 +23,41 @@ def merge_folders(source , target):
     print("Merge Completed")
 
 
+Encodingsfile = "Encodings.pkl"
+Namesfile = "Names.pkl"
 
-def Registerface():
+if os.path.exists(Encodingsfile):
+    with open(Encodingsfile , 'rb') as f:
+        known_face_encodings = pickle.load(f)
+
+else:
+    known_face_encodings = []
+
+if os.path.exists(Namesfile):
+    with open(Namesfile , "rb") as f:
+        known_names = pickle.load(f)
+else:
+    known_names= []
+
+
+def Registerface(nam):
 
     BASE = "SAVED_PEOPLE"
     os.makedirs(BASE , exist_ok= True)
 
-    Encodingsfile = "Encodings.pkl"
-    Namesfile = "Names.pkl"
+    # for person in os.listdir(BASE):
+    #     person_path = os.path.join(BASE , person)
+    #     if not os.path.isdir(person_path):
+    #         continue
 
-    if os.path.exists(Encodingsfile):
-        with open(Encodingsfile , 'rb') as f:
-            known_face_encodings = pickle.load(f)
-    
-    else:
-        known_face_encodings = []
+    #     for img_name in os.listdir(person_path):
+    #         img_path = os.path.join(person_path , img_name)
+    #         img = face_recognition.load_image_file(img_path)
+    #         encodings = face_recognition.face_encodings(img)
 
-    if os.path.exists(Namesfile):
-        with open(Namesfile , "rb") as f:
-            known_names = pickle.load(f)
-    else:
-        known_names= []
-
-    for person in os.listdir(BASE):
-        person_path = os.path.join(BASE , person)
-        if not os.path.isdir(person_path):
-            continue
-
-        for img_name in os.listdir(person_path):
-            img_path = os.path.join(person_path , img_name)
-            img = face_recognition.load_image_file(img_path)
-            encodings = face_recognition.face_encodings(img)
-
-            if len(encodings) > 0:
-                known_face_encodings.append(encodings[0])
-                known_names.append(person)
+    #         if len(encodings) > 0:
+    #             known_face_encodings.append(encodings[0])
+    #             known_names.append(person)
             
 
 
@@ -66,7 +66,7 @@ def Registerface():
 
     time.sleep(2) 
     sys.stdin.flush()
-    name = input("Enter youre name: ")
+    name = nam
 
     path = os.path.join(BASE , name)
     os.makedirs(path , exist_ok= True)
@@ -154,7 +154,8 @@ def Registerface():
 
     if confirm.upper() == 'N':
         print(f"New face saved of {name}")
-        known_names.append(name)
+
+        known_names.extend([name] * len(captured_encodings))
         with open("Names.pkl" , "wb") as f:
             pickle.dump(known_names , f)
 
@@ -163,4 +164,48 @@ def Registerface():
         pickle.dump(known_face_encodings , f) 
 
 
-Registerface()
+
+def predict():
+    with open(Namesfile, "rb") as f:
+        known_names = pickle.load(f)
+    with open(Encodingsfile, "rb") as f:
+        known_face_encodings = pickle.load(f)
+    
+    print(f"Names: {len(known_names)}, Encodings: {len(known_face_encodings)}")
+    print(f"Names list: {known_names}")
+
+    capture = cv.VideoCapture(0)
+    name = "Unknown"
+    start = time.time()
+    while time.time()- start < 5:
+
+        isTrue , frame = capture.read()
+
+        if not isTrue :
+            break
+
+        rgb = cv.cvtColor(frame , cv.COLOR_BGR2RGB)
+        facelocation = face_recognition.face_locations(rgb)
+        faceencodings = face_recognition.face_encodings(rgb)
+
+        for(top , right , bottom , left) , enc in zip(facelocation , faceencodings):
+            distances = face_recognition.face_distance(known_face_encodings , enc)
+            best = np.argmin(distances)
+
+            if distances[best] < 0.5:
+                name = known_names[best]
+            
+            cv.rectangle(frame , (left , top) , (right , bottom) , (0,255,0) ,2)
+            cv.putText(frame , f"{name} with a distance of {distances[best]:.2f}" , (left , top-10),
+                    cv.FONT_HERSHEY_COMPLEX , 0.6 , (0,255, 0) , 2)
+            
+            
+
+        cv.imshow("Recognize" , frame)
+        cv.waitKey(1)
+    capture.release()
+    cv.destroyAllWindows()
+    return name
+
+    
+
