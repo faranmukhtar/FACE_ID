@@ -40,7 +40,7 @@ else:
     known_names= []
 
 
-def Registerface(nam):
+def Registerface(nam , ask):
 
     BASE = "SAVED_PEOPLE"
     os.makedirs(BASE , exist_ok= True)
@@ -141,18 +141,23 @@ def Registerface(nam):
 
         
         if best_distance < 0.5:
-            print(f"Possible match: {fname}")
-            print(f'Distance: {best_distance:.3f}')
-            confirm = input("Correct? Y/N")
+            target = os.path.join(BASE , fname)
+            source = os.path.join(BASE , name)
 
-            if confirm.upper() == 'Y':
+            confirm = ask(fname)
+
+            if confirm.upper() == 'Y' or confirm.upper() == 'YES' :
                 target = os.path.join(BASE , fname)
                 source = os.path.join(BASE , name)
+
                 merge_folders(source , target)
 
+                known_names.extend([fname] * len(captured_encodings))
+                with open("Names.pkl" , "wb") as f:
+                    pickle.dump(known_names , f)
 
 
-    if confirm.upper() == 'N':
+    if confirm.upper() == 'N' or confirm.upper() == 'NO':
         print(f"New face saved of {name}")
 
         known_names.extend([name] * len(captured_encodings))
@@ -162,6 +167,8 @@ def Registerface(nam):
     known_face_encodings.extend(captured_encodings)
     with open("Encodings.pkl" , "wb") as f:
         pickle.dump(known_face_encodings , f) 
+
+
 
 
 
