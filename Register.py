@@ -79,7 +79,7 @@ def Registerface(nam , ask):
             capture.read()
 
         count = 1
-        while count < 6 :
+        while count < 3 :
             isTrue , frame = capture.read()
             if not isTrue:
                 continue
