@@ -7,6 +7,7 @@ Run Gui.py to launch. Click Register New Face to add yourself — the camera wil
 Setup
 
 pip install -r requirements.txt
+
 python Gui.py
 
 
